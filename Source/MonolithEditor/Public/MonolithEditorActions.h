@@ -70,6 +70,10 @@ public:
 	static FMonolithActionResult HandleStitchFlipbook(const TSharedPtr<FJsonObject>& Params);
 	static FMonolithActionResult HandleDeleteAssets(const TSharedPtr<FJsonObject>& Params);
 
+	// --- Scripting actions (HOFF 7) ---
+	static FMonolithActionResult HandleRunPython(const TSharedPtr<FJsonObject>& Params);
+	static FMonolithActionResult HandleLoadLevel(const TSharedPtr<FJsonObject>& Params);
+
 	static void OnLiveCodingPatchComplete();
 
 private:
