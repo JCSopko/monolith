@@ -79,12 +79,14 @@ bool FMonolithMemoryHelper::TryUnloadPackage(UObject* Asset)
 		return false;
 	}
 
-	// Mark the package as pending kill so it gets cleaned up on next GC
-	Package->ClearFlags(RF_Standalone);
-	Package->SetFlags(RF_Transient);
-
-	// Clear any references we might have
+	// Clear standalone so GC can collect the asset+package once external
+	// references (asset registry, open editors, level instances, etc.) drop.
+	// Do NOT set RF_Transient — that flag corrupts saves on the persistent
+	// game package and is in-memory-only; it doesn't trigger unload. If forced
+	// unload is genuinely required, use UPackageTools::UnloadPackages, which
+	// handles dirty-state, open editors, and reference cleanup correctly.
 	Asset->ClearFlags(RF_Standalone);
+	Package->ClearFlags(RF_Standalone);
 
 	return true;
 }
