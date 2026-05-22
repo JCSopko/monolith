@@ -18,19 +18,26 @@ public class MonolithBABridge : ModuleRules
 
 		if (!bReleaseBuild)
 		{
-			// 1. Check project Plugins/ folder (manual install or symlink)
-			string ProjectPluginsDir = Path.Combine(
-				Target.ProjectFile.Directory.FullName, "Plugins");
-			if (Directory.Exists(ProjectPluginsDir))
+			// 1. Check project Plugins/ folder (manual install or symlink).
+			// Target.ProjectFile is null when building an engine target (e.g. the
+			// UnrealEditor engine target, or any Program target) — there is no
+			// .uproject. Guard the project-plugins probe; the engine-plugins
+			// probes below still run so Monolith works as an engine plugin too.
+			if (Target.ProjectFile != null)
 			{
-				bHasBlueprintAssist = Directory.Exists(
-					Path.Combine(ProjectPluginsDir, "BlueprintAssist"));
-
-				if (!bHasBlueprintAssist)
+				string ProjectPluginsDir = Path.Combine(
+					Target.ProjectFile.Directory.FullName, "Plugins");
+				if (Directory.Exists(ProjectPluginsDir))
 				{
-					bHasBlueprintAssist = Directory.GetDirectories(
-						ProjectPluginsDir, "Blueprin*",
-						SearchOption.TopDirectoryOnly).Length > 0;
+					bHasBlueprintAssist = Directory.Exists(
+						Path.Combine(ProjectPluginsDir, "BlueprintAssist"));
+
+					if (!bHasBlueprintAssist)
+					{
+						bHasBlueprintAssist = Directory.GetDirectories(
+							ProjectPluginsDir, "Blueprin*",
+							SearchOption.TopDirectoryOnly).Length > 0;
+					}
 				}
 			}
 

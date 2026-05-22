@@ -13,16 +13,23 @@ public class MonolithComboGraph : ModuleRules
 
 		if (!bReleaseBuild)
 		{
-			// 1. Check project Plugins/ folder
-			string ProjectPluginsDir = Path.Combine(
-				Target.ProjectFile.Directory.FullName, "Plugins");
-			if (Directory.Exists(ProjectPluginsDir))
+			// 1. Check project Plugins/ folder.
+			// Target.ProjectFile is null when building an engine target (e.g. the
+			// UnrealEditor engine target, or any Program target) — there is no
+			// .uproject. Guard the project-plugins probe; the engine-plugins
+			// probes below still run so Monolith works as an engine plugin too.
+			if (Target.ProjectFile != null)
 			{
-				bHasComboGraph = Directory.Exists(
-					Path.Combine(ProjectPluginsDir, "ComboGraph"))
-					|| Directory.GetDirectories(
-						ProjectPluginsDir, "ComboGra*",
-						SearchOption.TopDirectoryOnly).Length > 0;
+				string ProjectPluginsDir = Path.Combine(
+					Target.ProjectFile.Directory.FullName, "Plugins");
+				if (Directory.Exists(ProjectPluginsDir))
+				{
+					bHasComboGraph = Directory.Exists(
+						Path.Combine(ProjectPluginsDir, "ComboGraph"))
+						|| Directory.GetDirectories(
+							ProjectPluginsDir, "ComboGra*",
+							SearchOption.TopDirectoryOnly).Length > 0;
+				}
 			}
 
 			// 2. Check Engine Plugins/Marketplace/ folder (Fab install)

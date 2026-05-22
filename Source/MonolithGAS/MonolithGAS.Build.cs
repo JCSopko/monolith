@@ -41,16 +41,23 @@ public class MonolithGAS : ModuleRules
 
 		if (!bReleaseBuild)
 		{
-			// 1. Project Plugins/ folder (manual install or symlink)
-			string ProjectPluginsDir = Path.Combine(
-				Target.ProjectFile.Directory.FullName, "Plugins");
-			if (Directory.Exists(ProjectPluginsDir))
+			// 1. Project Plugins/ folder (manual install or symlink).
+			// Target.ProjectFile is null when building an engine target (e.g. the
+			// UnrealEditor engine target, or any Program target) — there is no
+			// .uproject. Guard the project-plugins probe; the engine-plugins
+			// probes below still run so Monolith works as an engine plugin too.
+			if (Target.ProjectFile != null)
 			{
-				bHasGBA = Directory.Exists(
-					Path.Combine(ProjectPluginsDir, "BlueprintAttributes"))
-					|| Directory.GetDirectories(
-						ProjectPluginsDir, "Gameplaya*",
-						SearchOption.TopDirectoryOnly).Length > 0;
+				string ProjectPluginsDir = Path.Combine(
+					Target.ProjectFile.Directory.FullName, "Plugins");
+				if (Directory.Exists(ProjectPluginsDir))
+				{
+					bHasGBA = Directory.Exists(
+						Path.Combine(ProjectPluginsDir, "BlueprintAttributes"))
+						|| Directory.GetDirectories(
+							ProjectPluginsDir, "Gameplaya*",
+							SearchOption.TopDirectoryOnly).Length > 0;
+				}
 			}
 
 			// 2. Engine Plugins/Marketplace/ folder (Fab install)
