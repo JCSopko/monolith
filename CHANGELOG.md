@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+Ports Monolith to build, link, and load clean on **Unreal Engine 5.8**, alongside continued support for 5.7.1. UE5.8 reworked `FJsonObject`'s internal key type; this release adapts every module that iterates a JSON object's fields to the new type, plus two small unrelated API-drift fixes and a Build.cs dependency fix surfaced along the way. Verified by a headless-editor MCP round-trip through the ported JSON pipeline (`tools_registered: 1150`, all 18 modules loaded, 0 missing/failed) — not exit-code-only. Commit `71648e1` on branch `feat/ue5.8-fjsonobject-port`. Full porting notes, including the fix idiom for future engine bumps: [Docs/ENGINE_COMPAT.md](Docs/ENGINE_COMPAT.md).
+
+### Changed
+
+- **`FJsonObject::Values` now keys on `UE::FSharedString`** instead of `FString` (a UE5.8 engine change, not a Monolith design choice). All 18 modules updated — every site iterating a JSON object's `Values` map now wraps the loop key in `FString(Pair.Key)` at the point of use (~50 call sites across 26 files). Chose the minimal per-site wrap over the engine-wide `UE_JSONOBJECT_LEGACY_STRING_KEYS=1` escape hatch, which would force a full-engine relink and affect every `FJsonObject` consumer in the tree, not just Monolith.
+- Two call sites needed the reverse wrap (`FSharedString` → `FString`, keying a JSON-derived value into an unrelated plain `TMap<FString, ...>`), and two sites using `TMap::GetKeys()` / `operator[]` directly against a `Values` map (`MonolithMeshFurnishingActions.cpp`, `MonolithMeshProceduralCache.cpp`) were rewritten to iterate `Values` directly — neither has a heterogeneous-lookup overload for `FString` against an `FSharedString`-keyed map (unlike `FJsonObject::SetField`/`HasField`, which Epic gave `FStringView` overloads).
+- **`MonolithAnimation.Build.cs`** now declares direct `Slate`/`SlateCore` module dependencies. 5.8 tightened a transitive re-export through `UnrealEd` that previously supplied them, which surfaced as an unrelated LNK2019 in a Control Rig retarget-chain widget (`STableRow<FRetargetChainElement>`).
+
+### Fixed
+
+- **`RigVMAsset.h` → `RigVMEditorAsset.h`** — 5.8 renamed the header; updated the include in `MonolithControlRigWriteActions.cpp`.
+- **`FMeshMergingSettings::bPivotPointAtZero`** — deprecated in 5.8 (`_DEPRECATED` suffix, no working setter); removed the now-defunct assignment in `MonolithMeshQualityActions.cpp` (it set `false`, the type's default — behavior-preserving, not a functional change).
+
 ## [0.14.7] - 2026-04-26
 
 This release rolls up four work-streams: (1) responsible-disclosure security response to [#38](https://github.com/tumourlove/monolith/issues/38) (CORS lockdown, MCP kill-switch, auto-update SHA256 verification, default-off auto-update); (2) **F22 P0 SmartObjects + StateTree gating retrofit** — closes the same class of bug as [#30](https://github.com/tumourlove/monolith/issues/30) and [#32](https://github.com/tumourlove/monolith/issues/32) where end users hit C1083/LNK2019 on plugins they hadn't enabled in their `.uproject`; (3) the Phase J fix sprint (audio/BT/GAS validation + observability + spec corrections); (4) StructUtils deprecation cleanup post-F22 — the deprecated plugin's headers relocated into CoreUObject in 5.5+. Plus PR [#37](https://github.com/tumourlove/monolith/pull/37) (community contribution by @MaxenceEpitech: anim graph property setter + native-component overrides + extended HTTP retry), the CommonUI M0.5 action pack (50 new actions), and PR [#39](https://github.com/tumourlove/monolith/pull/39) by @danielandric (recursive cradle sub-case + walker unification).
