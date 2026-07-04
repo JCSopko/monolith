@@ -17,6 +17,8 @@ public class MonolithAnimation : ModuleRules
 		{
 			"MonolithCore",
 			"UnrealEd",
+			"Slate",
+			"SlateCore",
 			"AnimGraph",
 			"AnimGraphRuntime",
 			"BlueprintGraph",

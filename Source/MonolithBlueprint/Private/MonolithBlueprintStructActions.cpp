@@ -554,7 +554,7 @@ FMonolithActionResult FMonolithBlueprintStructActions::HandleAddDataTableRow(con
 
 	for (const auto& Pair : (*ValuesObj)->Values)
 	{
-		const FString& FieldName = Pair.Key;
+		const FString& FieldName = FString(Pair.Key);
 		const TSharedPtr<FJsonValue>& JsonVal = Pair.Value;
 
 		// Find property by name — try exact, case-insensitive, then display name

@@ -181,12 +181,18 @@ FString FMonolithMeshProceduralCache::SortedJsonSerialize(const TSharedPtr<FJson
 	}
 
 	// Extract keys and sort alphabetically
-	TArray<FString> Keys;
-	Obj->Values.GetKeys(Keys);
-	Keys.Sort();
+	TArray<TPair<FString, TSharedPtr<FJsonValue>>> SortedEntries;
+	for (const auto& Pair : Obj->Values)
+	{
+		SortedEntries.Add(TPair<FString, TSharedPtr<FJsonValue>>(FString(Pair.Key), Pair.Value));
+	}
+	SortedEntries.Sort([](const TPair<FString, TSharedPtr<FJsonValue>>& A, const TPair<FString, TSharedPtr<FJsonValue>>& B)
+	{
+		return A.Key < B.Key;
+	});
 
 	FString Result = TEXT("{");
-	for (int32 i = 0; i < Keys.Num(); ++i)
+	for (int32 i = 0; i < SortedEntries.Num(); ++i)
 	{
 		if (i > 0)
 		{
@@ -194,12 +200,12 @@ FString FMonolithMeshProceduralCache::SortedJsonSerialize(const TSharedPtr<FJson
 		}
 
 		// Escape key
-		FString EscapedKey = Keys[i];
+		FString EscapedKey = SortedEntries[i].Key;
 		EscapedKey.ReplaceInline(TEXT("\\"), TEXT("\\\\"));
 		EscapedKey.ReplaceInline(TEXT("\""), TEXT("\\\""));
 		Result += TEXT("\"") + EscapedKey + TEXT("\":");
 
-		const TSharedPtr<FJsonValue>& Val = Obj->Values[Keys[i]];
+		const TSharedPtr<FJsonValue>& Val = SortedEntries[i].Value;
 		Result += SerializeValue(Val);
 	}
 	Result += TEXT("}");
@@ -235,7 +241,7 @@ FString FMonolithMeshProceduralCache::ComputeHash(const FString& ActionName, con
 	{
 		for (const auto& Pair : Params->Values)
 		{
-			if (!ExcludeKeys.Contains(Pair.Key))
+			if (!ExcludeKeys.Contains(FString(Pair.Key)))
 			{
 				Canonical->SetField(Pair.Key, Pair.Value);
 			}
@@ -332,7 +338,7 @@ void FMonolithMeshProceduralCache::Register(const FString& Hash, const FString& 
 		TSharedPtr<FJsonObject> IdentityParams = MakeShared<FJsonObject>();
 		for (const auto& Pair : Params->Values)
 		{
-			if (!ExcludeKeys.Contains(Pair.Key))
+			if (!ExcludeKeys.Contains(FString(Pair.Key)))
 			{
 				IdentityParams->SetField(Pair.Key, Pair.Value);
 			}
@@ -398,7 +404,7 @@ int32 FMonolithMeshProceduralCache::ValidateCache()
 		const TSharedPtr<FJsonObject>* EntryObj = nullptr;
 		if (!Pair.Value.IsValid() || Pair.Value->Type != EJson::Object)
 		{
-			StaleHashes.Add(Pair.Key);
+			StaleHashes.Add(FString(Pair.Key));
 			continue;
 		}
 
@@ -406,7 +412,7 @@ int32 FMonolithMeshProceduralCache::ValidateCache()
 		const FString AssetPath = Entry->GetStringField(TEXT("asset_path"));
 		if (AssetPath.IsEmpty() || !FPackageName::DoesPackageExist(AssetPath))
 		{
-			StaleHashes.Add(Pair.Key);
+			StaleHashes.Add(FString(Pair.Key));
 		}
 	}
 
@@ -457,7 +463,7 @@ int32 FMonolithMeshProceduralCache::ClearCache(const FString& TypeFilter)
 		const TSharedPtr<FJsonObject> Entry = Pair.Value->AsObject();
 		if (Entry->GetStringField(TEXT("type")).Equals(TypeFilter, ESearchCase::IgnoreCase))
 		{
-			ToRemove.Add(Pair.Key);
+			ToRemove.Add(FString(Pair.Key));
 		}
 	}
 

@@ -433,7 +433,7 @@ FMonolithActionResult FMonolithUIStylingActions::HandleSetColorScheme(const TSha
 
     for (const auto& Pair : (*ColorsObj)->Values)
     {
-        const EStyleColor* SlotColor = SlotMap.Find(Pair.Key);
+        const EStyleColor* SlotColor = SlotMap.Find(FString(Pair.Key));
         if (!SlotColor)
         {
             return FMonolithActionResult::Error(
@@ -444,7 +444,7 @@ FMonolithActionResult FMonolithUIStylingActions::HandleSetColorScheme(const TSha
         FLinearColor Color = MonolithUIInternal::ParseColor(ColorStr);
         USlateThemeManager::Get().SetDefaultColor(*SlotColor, Color);
         SlotsSet++;
-        SetNames.Add(Pair.Key);
+        SetNames.Add(FString(Pair.Key));
     }
 
     if (SlotsSet == 0)
