@@ -29,8 +29,14 @@ from io import TextIOWrapper
 MONOLITH_URL = os.environ.get("MONOLITH_URL", "http://localhost:9316/mcp")
 MONOLITH_HEALTH = MONOLITH_URL.replace("/mcp", "/health")
 PROXY_NAME = "monolith-proxy"
-PROXY_VERSION = "1.1.0"
-TIMEOUT = 30.0
+PROXY_VERSION = "1.2.0"
+# Env-overridable; raised from a hardcoded 30.0. Long run_python / asset-batch ops
+# (e.g. duplicating dozens of assets) exceed 30s — the proxy then closes the connection
+# mid-op, so the editor's completed response hits a dead socket ("socket_send_failure";
+# the work finishes server-side but the reply is undeliverable, surfacing to CC as
+# "editor not running"). 180s default gives real ops room; genuine down-state is still
+# caught fast by the separate 3s /health poll. Set MONOLITH_TIMEOUT to tune. (2026-07-04)
+TIMEOUT = float(os.environ.get("MONOLITH_TIMEOUT", "180"))
 POLL_INTERVAL = 5.0
 POLL_START_DELAY = 3.0
 
